@@ -1,0 +1,35 @@
+import pandas as pd
+from datetime import datetime, timedelta
+
+# Assuming your data frame is named df
+df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+df = df.sort_values(['Person_ID', 'Date'])
+
+# Get the current date
+current_date = datetime.now()
+
+# Define a function to calculate rolling sums for specified intervals
+def calculate_rolling_sums(group):
+    group['Buy_12m'] = group['buy_total'].rolling(f'{(current_date - timedelta(days=1)).strftime("%j")}D', min_periods=1).sum()
+    group['Buy_9m'] = group['buy_total'].rolling('274D', min_periods=1).sum()
+    group['Buy_6m'] = group['buy_total'].rolling('183D', min_periods=1).sum()
+    group['Buy_3m'] = group['buy_total'].rolling('91D', min_periods=1).sum()
+    
+    group['Sell_12m'] = group['sell_total'].rolling(f'{(current_date - timedelta(days=1)).strftime("%j")}D', min_periods=1).sum()
+    group['Sell_9m'] = group['sell_total'].rolling('274D', min_periods=1).sum()
+    group['Sell_6m'] = group['sell_total'].rolling('183D', min_periods=1).sum()
+    group['Sell_3m'] = group['sell_total'].rolling('91D', min_periods=1).sum()
+    
+    return group
+
+# Apply the function to each group of Person_ID
+df = df.groupby('Person_ID').apply(calculate_rolling_sums)
+
+# Drop any NaN values created by rolling sums
+df = df.dropna()
+
+# Reset the index
+df = df.reset_index(drop=True)
+
+# Display the resulting DataFrame
+print(df)
